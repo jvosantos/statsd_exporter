@@ -20,13 +20,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 var (
 	statsdMetricRE    = `[a-zA-Z_](-?[a-zA-Z0-9_])+`
 	templateReplaceRE = `(\$\{?\d+\}?)`
+    defBuckets = []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10}
 
 	metricLineRE = regexp.MustCompile(`^(\*\.|` + statsdMetricRE + `\.)+(\*|` + statsdMetricRE + `)$`)
 	metricNameRE = regexp.MustCompile(`^([a-zA-Z_]|` + templateReplaceRE + `)([a-zA-Z0-9_]|` + templateReplaceRE + `)*$`)
@@ -45,13 +45,13 @@ type metricMapper struct {
 	mutex    sync.Mutex
 }
 
-type matchMetricType string
+type Labels map[string]string
 
 type metricMapping struct {
-	Match           string `yaml:"match"`
-	Name            string `yaml:"name"`
+	Match           string            `yaml:"match"`
+	Name            string            `yaml:"name"`
 	regex           *regexp.Regexp
-	Labels          prometheus.Labels `yaml:"labels"`
+	Labels          Labels 			  `yaml:"labels"`
 	TimerType       timerType         `yaml:"timer_type"`
 	Buckets         []float64         `yaml:"buckets"`
 	MatchType       matchType         `yaml:"match_type"`
@@ -68,7 +68,7 @@ func (m *metricMapper) initFromYAMLString(fileContents string) error {
 	}
 
 	if n.Defaults.Buckets == nil || len(n.Defaults.Buckets) == 0 {
-		n.Defaults.Buckets = prometheus.DefBuckets
+		n.Defaults.Buckets = defBuckets
 	}
 
 	if n.Defaults.MatchType == matchTypeDefault {
@@ -151,7 +151,7 @@ func (m *metricMapper) initFromFile(fileName string) error {
 	return m.initFromYAMLString(string(mappingStr))
 }
 
-func (m *metricMapper) getMapping(statsdMetric string, statsdMetricType metricType) (*metricMapping, prometheus.Labels, bool) {
+func (m *metricMapper) getMapping(statsdMetric string, statsdMetricType metricType) (*metricMapping, Labels, bool) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -172,7 +172,7 @@ func (m *metricMapper) getMapping(statsdMetric string, statsdMetricType metricTy
 			continue
 		}
 
-		labels := prometheus.Labels{}
+		labels := Labels{}
 		for label, valueExpr := range mapping.Labels {
 			value := mapping.regex.ExpandString([]byte{}, valueExpr, statsdMetric, matches)
 			labels[label] = string(value)

@@ -15,22 +15,11 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"net"
-	"net/http"
-	"os"
 	"strconv"
-
 	"github.com/howeyc/fsnotify"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/log"
-	"github.com/prometheus/common/version"
+	"github.com/golang/glog"
 )
-
-func init() {
-	prometheus.MustRegister(version.NewCollector("statsd_exporter"))
-}
 
 var (
 	listenAddress       = flag.String("web.listen-address", ":9102", "The address on which to expose the web interface and generated Prometheus metrics.")
@@ -43,24 +32,24 @@ var (
 	showVersion         = flag.Bool("version", false, "Print version information.")
 )
 
-func serveHTTP() {
-	http.Handle(*metricsEndpoint, promhttp.Handler())
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
-			<head><title>StatsD Exporter</title></head>
-			<body>
-			<h1>StatsD Exporter</h1>
-			<p><a href="` + *metricsEndpoint + `">Metrics</a></p>
-			</body>
-			</html>`))
-	})
-	log.Fatal(http.ListenAndServe(*listenAddress, nil))
-}
+//func serveHTTP() {
+//	http.Handle(*metricsEndpoint, promhttp.Handler())
+//	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+//		w.Write([]byte(`<html>
+//			<head><title>StatsD Exporter</title></head>
+//			<body>
+//			<h1>StatsD Exporter</h1>
+//			<p><a href="` + *metricsEndpoint + `">Metrics</a></p>
+//			</body>
+//			</html>`))
+//	})
+//	log.Fatal(http.ListenAndServe(*listenAddress, nil))
+//}
 
 func ipPortFromString(addr string) (*net.IPAddr, int) {
 	host, portStr, err := net.SplitHostPort(addr)
 	if err != nil {
-		log.Fatal("Bad StatsD listening address", addr)
+		glog.Fatal("Bad StatsD listening address", addr)
 	}
 
 	if host == "" {
@@ -68,12 +57,12 @@ func ipPortFromString(addr string) (*net.IPAddr, int) {
 	}
 	ip, err := net.ResolveIPAddr("ip", host)
 	if err != nil {
-		log.Fatalf("Unable to resolve %s: %s", host, err)
+		glog.Fatalf("Unable to resolve %s: %s", host, err)
 	}
 
 	port, err := strconv.Atoi(portStr)
 	if err != nil || port < 0 || port > 65535 {
-		log.Fatalf("Bad port %s: %s", portStr, err)
+		glog.Fatalf("Bad port %s: %s", portStr, err)
 	}
 
 	return ip, port
@@ -100,24 +89,24 @@ func tcpAddrFromString(addr string) *net.TCPAddr {
 func watchConfig(fileName string, mapper *metricMapper) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
 	err = watcher.WatchFlags(fileName, fsnotify.FSN_MODIFY)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
 	for {
 		select {
 		case ev := <-watcher.Event:
-			log.Infof("Config file changed (%s), attempting reload", ev)
+			glog.Infof("Config file changed (%s), attempting reload", ev)
 			err = mapper.initFromFile(fileName)
 			if err != nil {
-				log.Errorln("Error reloading config:", err)
+				glog.Errorln("Error reloading config:", err)
 				configLoads.WithLabelValues("failure").Inc()
 			} else {
-				log.Infoln("Config reloaded successfully")
+				glog.Infoln("Config reloaded successfully")
 				configLoads.WithLabelValues("success").Inc()
 			}
 			// Re-add the file watcher since it can get lost on some changes. E.g.
@@ -125,7 +114,7 @@ func watchConfig(fileName string, mapper *metricMapper) {
 			// sequence, after which the newly written file is no longer watched.
 			_ = watcher.WatchFlags(fileName, fsnotify.FSN_MODIFY)
 		case err := <-watcher.Error:
-			log.Errorln("Error watching config:", err)
+			glog.Errorln("Error watching config:", err)
 		}
 	}
 }
@@ -133,26 +122,15 @@ func watchConfig(fileName string, mapper *metricMapper) {
 func main() {
 	flag.Parse()
 
-	if *showVersion {
-		fmt.Fprintln(os.Stdout, version.Print("statsd_exporter"))
-		os.Exit(0)
-	}
-
-	if *statsdListenAddress != "" {
-		log.Warnln("Warning: statsd.listen-address is DEPRECATED, please use statsd.listen-udp instead.")
-		*statsdListenUDP = *statsdListenAddress
-	}
-
 	if *statsdListenUDP == "" && *statsdListenTCP == "" {
-		log.Fatalln("At least one of UDP/TCP listeners must be specified.")
+		glog.Fatalln("At least one of UDP/TCP listeners must be specified.")
 	}
 
-	log.Infoln("Starting StatsD -> Prometheus Exporter", version.Info())
-	log.Infoln("Build context", version.BuildContext())
-	log.Infof("Accepting StatsD Traffic: UDP %v, TCP %v", *statsdListenUDP, *statsdListenTCP)
-	log.Infoln("Accepting Prometheus Requests on", *listenAddress)
+	glog.Infoln("Starting StatsD -> Prometheus Exporter")
+	glog.Infof("Accepting StatsD Traffic: UDP %v, TCP %v", *statsdListenUDP, *statsdListenTCP)
+	glog.Infoln("Accepting Prometheus Requests on", *listenAddress)
 
-	go serveHTTP()
+	//go serveHTTP()
 
 	events := make(chan Events, 1024)
 	defer close(events)
@@ -161,13 +139,13 @@ func main() {
 		udpListenAddr := udpAddrFromString(*statsdListenUDP)
 		uconn, err := net.ListenUDP("udp", udpListenAddr)
 		if err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 		}
 
 		if *readBuffer != 0 {
 			err = uconn.SetReadBuffer(*readBuffer)
 			if err != nil {
-				log.Fatal("Error setting UDP read buffer:", err)
+				glog.Fatal("Error setting UDP read buffer:", err)
 			}
 		}
 
@@ -179,7 +157,7 @@ func main() {
 		tcpListenAddr := tcpAddrFromString(*statsdListenTCP)
 		tconn, err := net.ListenTCP("tcp", tcpListenAddr)
 		if err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 		}
 		defer tconn.Close()
 
@@ -191,7 +169,7 @@ func main() {
 	if *mappingConfig != "" {
 		err := mapper.initFromFile(*mappingConfig)
 		if err != nil {
-			log.Fatal("Error loading config:", err)
+			glog.Fatal("Error loading config:", err)
 		}
 		go watchConfig(*mappingConfig, mapper)
 	}
