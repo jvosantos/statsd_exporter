@@ -1,19 +1,28 @@
-# Copyright 2013 The Prometheus Authors
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+GO 		?= go
+GOFMT   ?= $(GO)fmt
+DOCKER  ?= docker
 
-include Makefile.common
+.PHONY: all
+all: build container
 
-STATICCHECK_IGNORE = \
-  github.com/prometheus/statsd_exporter/main.go:SA1019 \
+.PHONY: build
+build:
+	@echo " 🦄 Mix sugar, spice, and everything nice with an accidental chemical X"
+	$(GO) build
 
-DOCKER_IMAGE_NAME       ?= statsd-exporter
+.PHONY: container
+container: Dockerfile build
+	@echo " 🐳 On its own little box"
+	$(DOCKER) build -t jvosantos/statsd_exporter .
+
+.PHONY: clean
+clean: statsd_exporter
+
+.PHONY: runcontainer
+runcontainer: container
+	docker run -it -p 8125:8125/udp -v `pwd`/mappings.yaml:/etc/statsd_exporter/mappings.yaml jvosantos/statsd_exporter:latest -mapping-config=/etc/statsd_exporter/mappings.yaml -statsd.listen-udp=:8125 -elasticsearch.url="https://73b2a6be8df7253c9eb5ae999c30fd33.eu-west-1.aws.found.io:9243" --elasticsearch.username=statsd-exporter -elasticsearch.password=3gfturneiTdgsRyzdJMd -v=1000 -logtostderr
+
+.PHONY: run
+run: build
+	@echo " 🐠 Swimming around"
+	./statsd_exporter -mapping-config=mappings.yaml -statsd.listen-udp=:8125 -elasticsearch.url="http://localhost:9200" -v=1000 -logtostderr

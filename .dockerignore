@@ -1,4 +1,1 @@
-.build/
-.tarballs/
-
-!.build/linux-amd64
+.git/

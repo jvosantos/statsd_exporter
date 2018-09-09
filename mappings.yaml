@@ -1,0 +1,1857 @@
+mappings:
+# envoy cluster stats from https://www.envoyproxy.io/docs/envoy/latest/configuration/cluster_manager/cluster_stats#general
+  - match: envoy.cluster_manager.cluster_added
+    name: "cluster_added"
+    help: "Total clusters added (either via static config or CDS)"
+    labels:
+      application: envoy
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster_manager.cluster_modified
+    name: "cluster_modified"
+    help: "Total clusters modified (via CDS)"
+    labels:
+      application: envoy
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster_manager.cluster_removed
+    name: "cluster_removed"
+    help: "Total clusters removed (via CDS)"
+    labels:
+      application: envoy
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster_manager.cluster_updated
+    name: "cluster_updated"
+    help: "Total cluster updates"
+    labels:
+      application: envoy
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster_manager.cluster_updated_via_merge
+    name: "cluster_updated_via_merge"
+    help: "Total cluster updates applied as merged updates"
+    labels:
+      application: envoy
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster_manager.update_merge_cancelled
+    name: "update_merge_cancelled"
+    help: "Total merged updates that got cancelled and delivered early"
+    labels:
+      application: envoy
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster_manager.update_out_of_merge_window
+    name: "update_out_of_merge_window"
+    help: "Total updates which arrived out of a merge window"
+    labels:
+      application: envoy
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster_manager.active_clusters
+    name: "active_clusters"
+    help: "Number of currently active (warmed) clusters"
+    labels:
+      application: envoy
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.cluster_manager.warming_clusters
+    name: "warming_clusters"
+    help: "Number of currently warming (not active) clusters"
+    labels:
+      application: envoy
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_total
+    name: "upstream_cx_total"
+    help: "Total connections"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_active
+    name: "upstream_cx_active"
+    help: "Total active connections"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: gauge
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_http1_total
+    name: "upstream_cx_http1_total"
+    help: "Total HTTP/1.1 connections"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_http2_total
+    name: "upstream_cx_http2_total"
+    help: "Total HTTP/2 connections"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_connect_fail
+    name: "upstream_cx_connect_fail"
+    help: "Total connection failures"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_connect_timeout
+    name: "upstream_cx_connect_timeout"
+    help: "Total connection connect timeouts"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_idle_timeout
+    name: "upstream_cx_idle_timeout"
+    help: "Total connection idle timeouts"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_connect_attempts_exceeded
+    name: "upstream_cx_connect_attempts_exceeded"
+    help: "Total consecutive connection failures exceeding configured connection attempts"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_overflow
+    name: "upstream_cx_overflow"
+    help: "Total times that the cluster’s connection circuit breaker overflowed"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_connect_ms
+    name: "upstream_cx_connect_ms"
+    help: "Connection establishment milliseconds"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: timer
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_length_ms
+    name: "upstream_cx_length_ms"
+    help: "Connection length milliseconds"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: timer
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_destroy
+    name: "upstream_cx_destroy"
+    help: "Total destroyed connections"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_destroy_local
+    name: "upstream_cx_destroy_local"
+    help: "Total connections destroyed locally"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_destroy_remote
+    name: "upstream_cx_destroy_remote"
+    help: "Total connections destroyed remotely"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_destroy_with_active_rq
+    name: "upstream_cx_destroy_with_active_rq"
+    help: "Total connections destroyed with 1+ active request"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_destroy_local_with_active_rq
+    name: "upstream_cx_destroy_local_with_active_rq"
+    help: "Total connections destroyed locally with 1+ active request"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_destroy_remote_with_active_rq
+    name: "upstream_cx_destroy_remote_with_active_rq"
+    help: "Total connections destroyed remotely with 1+ active request"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_close_notify
+    name: "upstream_cx_close_notify"
+    help: "Total connections closed via HTTP/1.1 connection close header or HTTP/2 GOAWAY"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_rx_bytes_total
+    name: "upstream_cx_rx_bytes_total"
+    help: "Total received connection bytes"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_rx_bytes_buffered
+    name: "upstream_cx_rx_bytes_buffered"
+    help: "Received connection bytes currently buffered"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_tx_bytes_total
+    name: "upstream_cx_tx_bytes_total"
+    help: "Total sent connection bytes"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_tx_bytes_buffered
+    name: "upstream_cx_tx_bytes_buffered"
+    help: "Send connection bytes currently buffered"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_protocol_error
+    name: "upstream_cx_protocol_error"
+    help: "Total connection protocol errors"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_max_requests
+    name: "upstream_cx_max_requests"
+    help: "Total connections closed due to maximum requests"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_cx_none_healthy
+    name: "upstream_cx_none_healthy"
+    help: "Total times connection not established due to no healthy hosts"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_total
+    name: "upstream_rq_total"
+    help: "Total requests"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_active
+    name: "upstream_rq_active"
+    help: "Total active requests"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_pending_total
+    name: "upstream_rq_pending_total"
+    help: "Total requests pending a connection pool connection"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_pending_overflow
+    name: "upstream_rq_pending_overflow"
+    help: "Total requests that overflowed connection pool circuit breaking and were failed"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_pending_failure_eject
+    name: "upstream_rq_pending_failure_eject"
+    help: "Total requests that were failed due to a connection pool connection failure"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_pending_active
+    name: "upstream_rq_pending_active"
+    help: "Total active requests pending a connection pool connection"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_cancelled
+    name: "upstream_rq_cancelled"
+    help: "Total requests cancelled before obtaining a connection pool connection"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_maintenance_mode
+    name: "upstream_rq_maintenance_mode"
+    help: "Total requests that resulted in an immediate 503 due to maintenance mode"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_timeout
+    name: "upstream_rq_timeout"
+    help: "Total requests that timed out waiting for a response"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_per_try_timeout
+    name: "upstream_rq_per_try_timeout"
+    help: "Total requests that hit the per try timeout"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_rx_reset
+    name: "upstream_rq_rx_reset"
+    help: "Total requests that were reset remotely"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_tx_reset
+    name: "upstream_rq_tx_reset"
+    help: "Total requests that were reset locally"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_retry
+    name: "upstream_rq_retry"
+    help: "Total request retries"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_retry_success
+    name: "upstream_rq_retry_success"
+    help: "Total request retry successes"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_retry_overflow
+    name: "upstream_rq_retry_overflow"
+    help: "Total requests not retried due to circuit breaking"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_flow_control_paused_reading_total
+    name: "upstream_flow_control_paused_reading_total"
+    help: "Total number of times flow control paused reading from upstream"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_flow_control_resumed_reading_total
+    name: "upstream_flow_control_resumed_reading_total"
+    help: "Total number of times flow control resumed reading from upstream"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_flow_control_backed_up_total
+    name: "upstream_flow_control_backed_up_total"
+    help: "Total number of times the upstream connection backed up and paused reads from downstream"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_flow_control_drained_total
+    name: "upstream_flow_control_drained_total"
+    help: "Total number of times the upstream connection drained and resumed reads from downstream"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).membership_change
+    name: "membership_change"
+    help: "Total cluster membership changes"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).membership_healthy
+    name: "membership_healthy"
+    help: "Current cluster healthy total (inclusive of both health checking and outlier detection)"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.cluster.cluster_([^.]+).membership_total
+    name: "membership_total"
+    help: "Current cluster membership total"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.cluster.cluster_([^.]+).retry_or_shadow_abandoned
+    name: "retry_or_shadow_abandoned"
+    help: "Total number of times shadowing or retry buffering was canceled due to buffer limits"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).config_reload
+    name: "config_reload"
+    help: "Total API fetches that resulted in a config reload due to a different config"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).update_attempt
+    name: "update_attempt"
+    help: "Total cluster membership update attempts"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).update_success
+    name: "update_success"
+    help: "Total cluster membership update successes"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).update_failure
+    name: "update_failure"
+    help: "Total cluster membership update failures"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).update_empty
+    name: "update_empty"
+    help: "Total cluster membership updates ending with empty cluster load assignment and continuing with previous config"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).update_no_rebuild
+    name: "update_no_rebuild"
+    help: "Total successful cluster membership updates that didn’t result in any cluster load balancing structure rebuilds"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).version
+    name: "version"
+    help: "Hash of the contents from the last successful API fetch"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: guage
+  - match: envoy.cluster.cluster_([^.]+).max_host_weight
+    name: "max_host_weight"
+    help: "Maximum weight of any host in the cluster"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.cluster.cluster_([^.]+).bind_errors
+    name: "bind_errors"
+    help: "Total errors binding the socket to the configured source address"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+# envoy health_check stats from https://www.envoyproxy.io/docs/envoy/latest/configuration/cluster_manager/cluster_stats#health-check-statistics
+  - match: envoy.cluster.cluster_([^.]+).health_check.attempt
+    name: "health_check_attempt"
+    help: "Number of health checks"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).health_check.success
+    name: "health_check_success"
+    help: "Number of successful health checks"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).health_check.failure
+    name: "health_check_failure"
+    help: "Number of immediately failed health checks (e.g. HTTP 503) as well as network failures"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).health_check.passive_failure
+    name: "health_check_passive_failure"
+    help: "Number of health check failures due to passive events (e.g. x-envoy-immediate-health-check-fail)"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).health_check.network_failure
+    name: "health_check_network_failure"
+    help: "Number of health check failures due to network error"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).health_check.verify_cluster
+    name: "health_check_verify_cluster"
+    help: "Number of health checks that attempted cluster name verification"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).health_check.healthy
+    name: "health_check_healthy"
+    help: "Number of healthy members"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: gauge
+# envoy outlier detection stats from https://www.envoyproxy.io/docs/envoy/latest/configuration/cluster_manager/cluster_stats#outlier-detection-statistics
+  - match: envoy.cluster.cluster_([^.]+).outlier_detection.ejections_enforced_total
+    name: "outlier_detection_ejections_enforced_total"
+    help: "Number of enforced ejections due to any outlier type"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).outlier_detection.ejections_active
+    name: "outlier_detection_ejections_active"
+    help: "Number of currently ejected hosts"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.cluster.cluster_([^.]+).outlier_detection.ejections_overflow
+    name: "outlier_detection_ejections_overflow"
+    help: "Number of ejections aborted due to the max ejection %"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).outlier_detection.ejections_enforced_consecutive_5xx
+    name: "outlier_detection_ejections_enforced_consecutive_5xx"
+    help: "Number of enforced consecutive 5xx ejections"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).outlier_detection.ejections_detected_consecutive_5xx
+    name: "outlier_detection_ejections_detected_consecutive_5xx"
+    help: "Number of detected consecutive 5xx ejections (even if unenforced)"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).outlier_detection.ejections_enforced_success_rate
+    name: "outlier_detection_ejections_enforced_success_rate"
+    help: "Number of enforced success rate outlier ejections"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).outlier_detection.ejections_detected_success_rate
+    name: "outlier_detection_ejections_detected_success_rate"
+    help: "Number of detected success rate outlier ejections (even if unenforced)"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).outlier_detection.ejections_enforced_consecutive_gateway_failure
+    name: "outlier_detection_ejections_enforced_consecutive_gateway_failure"
+    help: "Number of enforced consecutive gateway failure ejections"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).outlier_detection.ejections_detected_consecutive_gateway_failure
+    name: "outlier_detection_ejections_detected_consecutive_gateway_failure"
+    help: "Number of detected consecutive gateway failure ejections (even if unenforced)"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).outlier_detection.ejections_total
+    name: "outlier_detection_ejections_total"
+    help: "Deprecated. Number of ejections due to any outlier type (even if unenforced)"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).outlier_detection.ejections_consecutive_5xx
+    name: "outlier_detection_ejections_consecutive_5xx"
+    help: "Deprecated. Number of consecutive 5xx ejections (even if unenforced)"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+# envoy dynamic http stats from https://www.envoyproxy.io/docs/envoy/latest/configuration/cluster_manager/cluster_stats#dynamic-http-statistics
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_completed
+    name: "upstream_rq_completed"
+    help: "Total upstream requests completed"
+    labels:
+      application: envoy
+      cluster: "$1"
+      track: all
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_([12345]xx)
+    name: "upstream_rq_status_code_group"
+    help: "Aggregate HTTP response codes (e.g., 2xx, 3xx, etc.)"
+    labels:
+      application: envoy
+      cluster: "$1"
+      http_status_code_group: "$2"
+      track: all
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_([12345][0-9][0-9])
+    name: "upstream_rq_status_code"
+    help: "Specific HTTP response codes (e.g., 201, 302, etc.)"
+    labels:
+      application: envoy
+      cluster: "$1"
+      http_status_code: "$2"
+      track: all
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).upstream_rq_time
+    name: "upstream_rq_time"
+    help: "Request time milliseconds"
+    labels:
+      application: envoy
+      cluster: "$1"
+      track: all
+    match_type: regex
+    match_metric_type: timer
+  - match: envoy.cluster.cluster_([^.]+).canary.upstream_rq_completed
+    name: "canary_upstream_rq_completed"
+    help: "Total upstream canary requests completed"
+    labels:
+      application: envoy
+      cluster: "$1"
+      track: canary
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).canary.upstream_rq_([12345]xx)
+    name: "canary_upstream_rq_status_code_group"
+    help: "Upstream canary aggregate HTTP response codes"
+    labels:
+      application: envoy
+      cluster: "$1"
+      http_status_code_group: "$2"
+      track: canary
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).canary.upstream_rq_([12345][0-9][0-9])
+    name: "canary_upstream_rq_status_code"
+    help: "Upstream canary specific HTTP response codes"
+    labels:
+      application: envoy
+      cluster: "$1"
+      http_status_code: "$2"
+      track: canary
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).canary.upstream_rq_time
+    name: "canary_upstream_rq_time"
+    help: "Upstream canary request time milliseconds"
+    labels:
+      application: envoy
+      cluster: "$1"
+      track: canary
+    match_type: regex
+    match_metric_type: timer
+  - match: envoy.cluster.cluster_([^.]+).internal.upstream_rq_complete
+    name: "origin_upstream_rq_complete"
+    help: "Total internal origin requests completed"
+    labels:
+      application: envoy
+      cluster: "$1"
+      track: internal
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).internal.upstream_rq_([12345]xx)
+    name: "origin_upstream_rq_status_code_group"
+    help: "Internal origin aggregate HTTP response codes"
+    labels:
+      application: envoy
+      cluster: "$1"
+      http_status_code_group: "$2"
+      track: internal
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).internal.upstream_rq_([12345][0-9][0-9])
+    name: "origin_upstream_rq_status_code"
+    help: "Internal origin specific HTTP response codes"
+    labels:
+      application: envoy
+      cluster: "$1"
+      http_status_code: "$2"
+      track: internal
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).internal.upstream_rq_time
+    name: "origin_upstream_rq_time"
+    help: "Internal origin request time milliseconds"
+    labels:
+      application: envoy
+      cluster: "$1"
+      track: internal
+    match_type: regex
+    match_metric_type: timer
+  - match: envoy.cluster.cluster_([^.]+).external.upstream_rq_complete
+    name: "external_upstream_rq_complete"
+    labels:
+      application: envoy
+      cluster: "$1"
+      track: external
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).external.upstream_rq_([12345]xx)
+    name: "origin_upstream_rq_status_code_group"
+    help: "External origin aggregate HTTP response codes"
+    labels:
+      application: envoy
+      cluster: "$1"
+      http_status_code_group: "$2"
+      track: external
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).external.upstream_rq_([12345][0-9][0-9])
+    name: "origin_upstream_rq_status_code"
+    help: "External origin specific HTTP response codes"
+    labels:
+      application: envoy
+      cluster: "$1"
+      http_status_code: "$2"
+      track: external
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).external.upstream_rq_time
+    name: "origin_upstream_rq_time"
+    help: "External origin request time milliseconds"
+    labels:
+      application: envoy
+      cluster: "$1"
+      track: external
+    match_type: regex
+    match_metric_type: timer
+# envoy per service zone dynamic http stats from https://www.envoyproxy.io/docs/envoy/latest/configuration/cluster_manager/cluster_stats#per-service-zone-dynamic-http-statistics
+  - match: envoy.cluster.cluster_([^.]+).zone.([^.]+).([^.]+).upstream_rq_([12345]xx)
+    name: ""
+    help: "Aggregate HTTP response codes (e.g., 2xx, 3xx, etc.)"
+    labels:
+      application: envoy
+      cluster: "$1"
+      source_zone: "$2"
+      destination_zone: "$3"
+      http_status_code_group: "$4"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).zone.([^.]+).([^.]+).upstream_rq_([12345][0-9][0-9])
+    name: ""
+    help: "Specific HTTP response codes (e.g., 201, 302, etc.)"
+    labels:
+      application: envoy
+      cluster: "$1"
+      source_zone: "$2"
+      destination_zone: "$3"
+      http_status_code: "$4"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).zone.([^.]+).([^.]+).upstream_rq_time
+    name: ""
+    help: "Request time milliseconds"
+    labels:
+      application: envoy
+      cluster: "$1"
+      source_zone: "$2"
+      destination_zone: "$3"
+    match_type: regex
+    match_metric_type: timer
+# envoy load balancer statistics from https://www.envoyproxy.io/docs/envoy/latest/configuration/cluster_manager/cluster_stats#load-balancer-statistics
+  - match: envoy.cluster.cluster_([^.]+).lb_recalculate_zone_structures
+    name: "lb_recalculate_zone_structures"
+    help: "The number of times locality aware routing structures are regenerated for fast decisions on upstream locality selection"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).lb_healthy_panic
+    name: "lb_healthy_panic"
+    help: "Total requests load balanced with the load balancer in panic mode"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).lb_zone_cluster_too_small
+    name: "lb_zone_cluster_too_small"
+    help: "No zone aware routing because of small upstream cluster size"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).lb_zone_routing_all_directly
+    name: "lb_zone_routing_all_directly"
+    help: "Sending all requests directly to the same zone"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).lb_zone_routing_sampled
+    name: "lb_zone_routing_sampled"
+    help: "Sending some requests to the same zone"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).lb_zone_routing_cross_zone
+    name: "lb_zone_routing_cross_zone"
+    help: "Zone aware routing mode but have to send cross zone"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).lb_local_cluster_not_ok
+    name: "lb_local_cluster_not_ok"
+    help: "Local host set is not set or it is panic mode for local cluster"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).lb_zone_number_differs
+    name: "lb_zone_number_differs"
+    help: "Number of zones in local and upstream cluster different"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).lb_zone_no_capacity_left
+    name: "lb_zone_no_capacity_left"
+    help: "Total number of times ended with random zone selection due to rounding error"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).original_dst_host_invalid
+    name: "original_dst_host_invalid"
+    help: "Total number of invalid hosts passed to original destination load balancer"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+# envoy load balancer subset statistics from https://www.envoyproxy.io/docs/envoy/latest/configuration/cluster_manager/cluster_stats#load-balancer-subset-statistics
+  - match: envoy.cluster.cluster_([^.]+).lb_subsets_active
+    name: "lb_subsets_active"
+    help: "Number of currently available subsets"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.cluster.cluster_([^.]+).lb_subsets_created
+    name: "lb_subsets_created"
+    help: "Number of subsets created"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).lb_subsets_removed
+    name: "lb_subsets_removed"
+    help: "Number of subsets removed due to no hosts"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).lb_subsets_selected
+    name: "lb_subsets_selected"
+    help: "Number of times any subset was selected for load balancing"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.cluster.cluster_([^.]+).lb_subsets_fallback
+    name: "lb_subsets_fallback"
+    help: "Number of times the fallback policy was invoked"
+    labels:
+      application: envoy
+      cluster: "$1"
+    match_type: regex
+    match_metric_type: counter
+# envoy Connection manager statistics from https://www.envoyproxy.io/docs/envoy/latest/configuration/http_conn_man/stats#statistics
+  - match: envoy.http.([^.)+).downstream_cx_total
+    name: "downstream_cx_total"
+    help: "Total connections"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_ssl_total
+    name: "downstream_cx_ssl_total"
+    help: "Total TLS connections"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_http1_total
+    name: "downstream_cx_http1_total"
+    help: "Total HTTP/1.1 connections"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_websocket_total
+    name: "downstream_cx_websocket_total"
+    help: "Total WebSocket connections"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_http2_total
+    name: "downstream_cx_http2_total"
+    help: "Total HTTP/2 connections"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_destroy
+    name: "downstream_cx_destroy"
+    help: "Total connections destroyed"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_destroy_remote
+    name: "downstream_cx_destroy_remote"
+    help: "Total connections destroyed due to remote close"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_destroy_local
+    name: "downstream_cx_destroy_local"
+    help: "Total connections destroyed due to local close"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_destroy_active_rq
+    name: "downstream_cx_destroy_active_rq"
+    help: "Total connections destroyed with 1+ active request"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_destroy_local_active_rq
+    name: "downstream_cx_destroy_local_active_rq"
+    help: "Total connections destroyed locally with 1+ active request"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_destroy_remote_active_rq
+    name: "downstream_cx_destroy_remote_active_rq"
+    help: "Total connections destroyed remotely with 1+ active request"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_active
+    name: "downstream_cx_active"
+    help: "Total active connections"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.http.([^.)+).downstream_cx_ssl_active
+    name: "downstream_cx_ssl_active"
+    help: "Total active TLS connections"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.http.([^.)+).downstream_cx_http1_active
+    name: "downstream_cx_http1_active"
+    help: "Total active HTTP/1.1 connections"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.http.([^.)+).downstream_cx_websocket_active
+    name: "downstream_cx_websocket_active"
+    help: "Total active WebSocket connections"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.http.([^.)+).downstream_cx_http2_active
+    name: "downstream_cx_http2_active"
+    help: "Total active HTTP/2 connections"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.http.([^.)+).downstream_cx_protocol_error
+    name: "downstream_cx_protocol_error"
+    help: "Total protocol errors"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_length_ms
+    name: "downstream_cx_length_ms"
+    help: "Connection length milliseconds"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: timer
+  - match: envoy.http.([^.)+).downstream_cx_rx_bytes_total
+    name: "downstream_cx_rx_bytes_total"
+    help: "Total bytes received"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_rx_bytes_buffered
+    name: "downstream_cx_rx_bytes_buffered"
+    help: "Total received bytes currently buffered"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.http.([^.)+).downstream_cx_tx_bytes_total
+    name: "downstream_cx_tx_bytes_total"
+    help: "Total bytes sent"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_tx_bytes_buffered
+    name: "downstream_cx_tx_bytes_buffered"
+    help: "Total sent bytes currently buffered"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.http.([^.)+).downstream_cx_drain_close
+    name: "downstream_cx_drain_close"
+    help: "Total connections closed due to draining"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_cx_idle_timeout
+    name: "downstream_cx_idle_timeout"
+    help: "Total connections closed due to idle timeout"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_flow_control_paused_reading_total
+    name: "downstream_flow_control_paused_reading_total"
+    help: "Total number of times reads were disabled due to flow control"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_flow_control_resumed_reading_total
+    name: "downstream_flow_control_resumed_reading_total"
+    help: "Total number of times reads were enabled on the connection due to flow control"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_rq_total
+    name: "downstream_rq_total"
+    help: "Total requests"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_rq_http1_total
+    name: "downstream_rq_http1_total"
+    help: "Total HTTP/1.1 requests"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_rq_http2_total
+    name: "downstream_rq_http2_total"
+    help: "Total HTTP/2 requests"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_rq_active
+    name: "downstream_rq_active"
+    help: "Total active requests"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: envoy.http.([^.)+).downstream_rq_response_before_rq_complete
+    name: "downstream_rq_response_before_rq_complete"
+    help: "Total responses sent before the request was complete"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_rq_rx_reset
+    name: "downstream_rq_rx_reset"
+    help: "Total request resets received"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_rq_tx_reset
+    name: "downstream_rq_tx_reset"
+    help: "Total request resets sent"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_rq_non_relative_path
+    name: "downstream_rq_non_relative_path"
+    help: "Total requests with a non-relative HTTP path"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_rq_too_large
+    name: "downstream_rq_too_large"
+    help: "Total requests resulting in a 413 due to buffering an overly large body"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_rq_completed
+    name: "downstream_rq_completed"
+    help: "Total requests that resulted in a response (e.g. does not include aborted requests)"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_rq_([12345]xx)
+    name: "downstream_rq_1xx"
+    help: "Total Aggregate http response codes"
+    labels:
+      application: envoy
+      connection_name: "$1"
+      http_status_code_group: "$2"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_rq_ws_on_non_ws_route
+    name: "downstream_rq_ws_on_non_ws_route"
+    help: "Total WebSocket upgrade requests rejected by non WebSocket routes"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).downstream_rq_time
+    name: "downstream_rq_time"
+    help: "Request time milliseconds"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: timer
+  - match: envoy.http.([^.)+).downstream_rq_idle_timeout
+    name: "downstream_rq_idle_timeout"
+    help: "Total requests closed due to idle timeout"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.)+).rs_too_large
+    name: "rs_too_large"
+    help: "Total response errors due to buffering an overly large body"
+    labels:
+      application: envoy
+      connection_name: "$1"
+    match_type: regex
+    match_metric_type: counter
+# envoy per user agent statistics from https://www.envoyproxy.io/docs/envoy/latest/configuration/http_conn_man/stats#per-user-agent-statistics
+  - match: envoy.http.([^.]+).user_agent.([^.]+).downstream_cx_total
+    name: ua_downstream_cx_total
+    help: "Total connections"
+    labels:
+      application: envoy
+      connection_name: "$1"
+      user_agent: "$2"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.]+).user_agent.([^.]+).downstream_cx_destroy_remote_active_rq
+    name: ua_downstream_cx_destroy_remote_active_rq
+    help: "Total connections destroyed remotely with 1+ active requests"
+    labels:
+      application: envoy
+      connection_name: "$1"
+      user_agent: "$2"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.http.([^.]+).user_agent.([^.]+).downstream_rq_total
+    name: ua_downstream_rq_total
+    help: "Total requests"
+    labels:
+      application: envoy
+      connection_name: "$1"
+      user_agent: "$2"
+    match_type: regex
+    match_metric_type: counter
+# envoy per listener statistics https://www.envoyproxy.io/docs/envoy/latest/configuration/http_conn_man/stats#per-listener-statistics
+  - match: envoy.listener.([^.]+).http.([^.]+).downstream_rq_completed
+    name: "listener_downstream_rq_completed"
+    help: "Total responses"
+    labels:
+      application: envoy
+      listener: "$1"
+      connection_name: "$2"
+    match_type: regex
+    match_metric_type: counter
+  - match: envoy.listener.([^.]+).http.([^.]+).downstream_rq_([12345]xx)
+    name: "listener_downstream_rq_1xx"
+    help: "Total 1xx responses"
+    labels:
+      application: envoy
+      listener: "$1"
+      connection_name: "$2"
+      http_status_code_group: "$3"
+    match_type: regex
+    match_metric_type: counter
+# hikari connection pool statistics
+  - match: hikaricpConnections.application.([^.]+).pool.([^.]+).statistic.value
+    name: hikaricpConnections
+    labels:
+      application: "$1"
+      pool: "$2"
+    match_type: regex
+    match_metric_type: gauge
+  - match: hikaricpConnectionsAcquire.application.([^.]+).pool.([^.]+)
+    name: hikaricpConnectionsAcquire
+    labels:
+      application: "$1"
+      pool: "$2"
+    match_type: regex
+    match_metric_type: timer
+  - match: hikaricpConnectionsAcquirePercentile.application.([^.]+).phi.([0-9].[0-9][0-9]).pool.([^.]+).statistic.value
+    name: hikaricpConnectionsAcquirePercentile
+    labels:
+      application: "$1"
+      percentile: "$2"
+      pool: "$3"
+    match_type: regex
+    match_metric_type: gauge
+  - match: hikaricpConnectionsActive.application.([^.]+).pool.([^.]+).statistic.value
+    name: hikaricpConnectionsActive
+    labels:
+      application: "$1"
+      pool: "$2"
+    match_type: regex
+    match_metric_type: gauge
+  - match: hikaricpConnectionsCreation.application.([^.]+).pool.([^.]+)
+    name: hikaricpConnectionsCreation
+    labels:
+      application: "$1"
+      pool: "$2"
+    match_type: regex
+    match_metric_type: timer
+  - match: hikaricpConnectionsCreationPercentile.application.([^.]+).phi.([0-9].[0-9][0-9]).pool.([^.]+).statistic.value
+    name: hikaricpConnectionsCreationPercentile
+    labels:
+      application: "$1"
+      percentile: "$2"
+      pool: "$3"
+    match_type: regex
+    match_metric_type: gauge
+  - match: hikaricpConnectionsIdle.application.([^.]+).pool.([^.]+).statistic.value
+    name: hikaricpConnectionsIdle
+    labels:
+      application: "$1"
+      pool: "$2"
+    match_type: regex
+    match_metric_type: gauge
+  - match: hikaricpConnectionsPending.application.([^.]+).pool.([^.]+).statistic.value
+    name: hikaricpConnectionsPending
+    labels:
+      application: "$1"
+      pool: "$2"
+    match_type: regex
+    match_metric_type: gauge
+  - match: hikaricpConnectionsUsage.application.([^.]+).pool.([^.]+)
+    name: hikaricpConnectionsUsage
+    labels:
+      application: "$1"
+      pool: "$2"
+    match_type: regex
+    match_metric_type: timer
+  - match: hikaricpConnectionsUsagePercentile.application.([^.]+).phi.([0-9].[0-9][0-9]).pool.([^.]+).statistic.value
+    name: hikaricpConnectionsUsagePercentile
+    labels:
+      application: "$1"
+      percentile: "$2"
+      pool: "$3"
+    match_type: regex
+    match_metric_type: gauge
+# spring boot statistics
+  - match: httpServerRequests.application.([^.]+).exception.([^.]+).method.([^.]+).status.([^.]+).uri.([^.]+)
+    name: httpServerRequests
+    labels:
+      application: "$1"
+      exception: "$2"
+      method: "$3"
+      status: "$4"
+      uri: "$5"
+    match_type: regex
+    match_metric_type: timer
+# hystrix circuit breaker statistics
+  - match: hystrixCircuitBreakerOpen.application.([^.]+).group.([^.]+).key.([^.]+).statistic.value
+    name: hystrixCircuitBreakerOpen
+    labels:
+      application: "$1"
+      group: "$2"
+      key: "$3"
+    match_type: regex
+    match_metric_type: gauge
+  - match: hystrixExecution.application.([^.]+).event.([^.]+).group.([^.]+).key.([^.]+).statistic.count
+    name: hystrixExecution
+    labels:
+      application: "$1"
+      event: "$2"
+      group: "$3"
+      key: "$4"
+    match_type: regex
+    match_metric_type: counter
+  - match: hystrixLatencyExecution.application.([^.]+).group.([^.]+).key.([^.]+)
+    name: hystrixLatencyExecution
+    labels:
+      application: "$1"
+      group: "$2"
+      key: "$3"
+    match_type: regex
+    match_metric_type: timer
+  - match: hystrixLatencyTotal.application.([^.]+).group.([^.]+).key.([^.]+)
+    name: hystrixLatencyTotal
+    labels:
+      application: "$1"
+      group: "$2"
+      key: "$3"
+    match_type: regex
+    match_metric_type: timer
+  - match: hystrixRequests.application.([^.]+).group.([^.]+).key.([^.]+).statistic.count
+    name: hystrixRequests
+    labels:
+      application: "$1"
+      group: "$2"
+      key: "$3"
+    match_type: regex
+    match_metric_type: counter
+  - match: hystrixThreadpoolConcurrentExecutionCurrent.application.([^.]+).group.([^.]+).key.([^.]+).statistic.value.threadpool.([^.]+)
+    name: hystrixThreadpoolConcurrentExecutionCurrent
+    labels:
+      application: "$1"
+      group: "$2"
+      key: "$3"
+      threadpool: "$4"
+    match_type: regex
+    match_metric_type: gauge
+  - match: hystrixThreadpoolConcurrentExecutionRollingMax.application.([^.]+).group.([^.]+).key.([^.]+).statistic.value.threadpool.([^.]+)
+    name: hystrixThreadpoolConcurrentExecutionRollingMax
+    labels:
+      application: "$1"
+      group: "$2"
+      key: "$3"
+      threadpool: "$4"
+    match_type: regex
+    match_metric_type: gauge
+# spring boot jdbc statistics
+  - match: jdbcConnectionsActive.application.([^.]+).name.([^.]+).statistic.value
+    name: jdbcConnectionsActive
+    labels:
+      application: "$1"
+      connection_name: "$2"
+    match_type: regex
+    match_metric_type: gauge
+  - match: jdbcConnectionsMax.application.([^.]+).name.([^.]+).statistic.value
+    name: jdbcConnectionsMax
+    labels:
+      application: "$1"
+      connection_name: "$2"
+    match_type: regex
+    match_metric_type: gauge
+  - match: jdbcConnectionsMin.application.([^.]+).name.([^.]+).statistic.value
+    name: jdbcConnectionsMin
+    labels:
+      application: "$1"
+      connection_name: "$2"
+    match_type: regex
+    match_metric_type: gauge
+# Spring boot jvm statistics
+  - match: jvmBufferCount.application.([^.]+).id.([^.]+).statistic.value
+    name: jvmBufferCount
+    labels:
+      application: "$1"
+      id: "$2"
+    match_type: regex
+    match_metric_type: gauge
+  - match: jvmBufferMemoryUsed.application.([^.]+).id.([^.]+).statistic.value
+    name: jvmBufferMemoryUsed
+    labels:
+      application: "$1"
+      id: "$2"
+    match_type: regex
+    match_metric_type: gauge
+  - match: jvmBufferTotalCapacity.application.([^.]+).id.([^.]+).statistic.value
+    name: jvmBufferTotalCapacity
+    labels:
+      application: "$1"
+      id: "$2"
+    match_type: regex
+    match_metric_type: gauge
+  - match: jvmClassesLoaded.application.([^.]+).statistic.value
+    name: jvmClassesLoaded
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: jvmClassesUnloaded.application.([^.]+).statistic.count
+    name: jvmClassesUnloaded
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: jvmGcLiveDataSize.application.([^.]+).statistic.value
+    name: jvmGcLiveDataSize
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: jvmGcMaxDataSize.application.([^.]+).statistic.value
+    name: jvmGcMaxDataSize
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: jvmGcMemoryAllocated.application.([^.]+).statistic.count
+    name: jvmGcMemoryAllocated
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: jvmGcMemoryPromoted.application.([^.]+).statistic.count
+    name: jvmGcMemoryPromoted
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: jvmGcPause.action.([^.]+).application.([^.]+).cause.([^.]+)
+    name: jvmGcPause
+    labels:
+      action: "$1"
+      application: "$2"
+      cause: "$3"
+    match_type: regex
+    match_metric_type: timer
+  - match: jvmMemoryCommitted.application.([^.]+).area.([^.]+).id.([^.]+).statistic.value
+    name: jvmMemoryCommitted
+    labels:
+      application: "$1"
+      area: "$2"
+      id: "$3"
+    match_type: regex
+    match_metric_type: gauge
+  - match: jvmMemoryMax.application.([^.]+).area.([^.]+).id.([^.]+).statistic.value
+    name: jvmMemoryMax
+    labels:
+      application: "$1"
+      area: "$2"
+      id: "$3"
+    match_type: regex
+    match_metric_type: gauge
+  - match: jvmMemoryUsed.application.([^.]+).area.([^.]+).id.([^.]+).statistic.value
+    name: jvmMemoryUsed
+    labels:
+      application: "$1"
+      area: "$2"
+      id: "$3"
+    match_type: regex
+    match_metric_type: gauge
+  - match: jvmThreadsDaemon.application.([^.]+).statistic.value
+    name: jvmThreadsDaemon
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: jvmThreadsLive.application.([^.]+).statistic.value
+    name: jvmThreadsLive
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: jvmThreadsPeak.application.([^.]+).statistic.value
+    name: jvmThreadsPeak
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+# Springboot logback statistics
+  - match: logbackEvents.application.([^.]+).level.([^.]+).statistic.count
+    name: logbackEvents
+    labels:
+      application: "$1"
+      level: "$2"
+    match_type: regex
+    match_metric_type: counter
+# Spring boot process statistics
+  - match: processCpuUsage.application.([^.]+).statistic.value
+    name: processCpuUsage
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: processFilesMax.application.([^.]+).statistic.value
+    name: processFilesMax
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: processFilesOpen.application.([^.]+).statistic.value
+    name: processFilesOpen
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: processStartTime.application.([^.]+).statistic.value
+    name: processStartTime
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: processUptime.application.([^.]+).statistic.value
+    name: processUptime
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+# Spring boot statsd statistics
+  - match: statsdQueueCapacity.application.([^.]+).statistic.value
+    name: statsdQueueCapacity
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: statsdQueueSize.application.([^.]+).statistic.value
+    name: statsdQueueSize
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+# Spring boot system statistics
+  - match: systemCpuCount.application.([^.]+).statistic.value
+    name: systemCpuCount
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: systemCpuUsage.application.([^.]+).statistic.value
+    name: systemCpuUsage
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: systemLoadAverage1m.application.([^.]+).statistic.value
+    name: systemLoadAverage1m
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+# spring boot tomcat statistics
+  - match: tomcatCacheAccess.application.([^.]+).statistic.count
+    name: tomcatCacheAccess
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: tomcatCacheHit.application.([^.]+).statistic.count
+    name: tomcatCacheHit
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: tomcatGlobalError.application.([^.]+).name.([^.]+).statistic.count
+    name: tomcatGlobalError
+    labels:
+      application: "$1"
+      name: "$2"
+    match_type: regex
+    match_metric_type: counter
+  - match: tomcatGlobalReceived.application.([^.]+).name.([^.]+).statistic.count
+    name: tomcatGlobalReceived
+    labels:
+      application: "$1"
+      name: "$2"
+    match_type: regex
+    match_metric_type: counter
+  - match: tomcatGlobalRequest.application.([^.]+).name.([^.]+)
+    name: tomcatGlobalRequest
+    labels:
+      application: "$1"
+      name: "$2"
+    match_type: regex
+    match_metric_type: timer
+  - match: tomcatGlobalRequestMax.application.([^.]+).name.([^.]+).statistic.value
+    name: tomcatGlobalRequestMax
+    labels:
+      application: "$1"
+      name: "$2"
+    match_type: regex
+    match_metric_type: gauge
+  - match: tomcatGlobalSent.application.([^.]+).name.([^.]+).statistic.count
+    name: tomcatGlobalSent
+    labels:
+      application: "$1"
+      name: "$2"
+    match_type: regex
+    match_metric_type: counter
+  - match: tomcatServletError.application.([^.]+).name.([^.]+).statistic.count
+    name: tomcatServletError
+    labels:
+      application: "$1"
+      name: "$2"
+    match_type: regex
+    match_metric_type: counter
+  - match: tomcatServletRequestMax.application.([^.]+).name.([^.]+).statistic.value
+    name: tomcatServletRequestMax
+    labels:
+      application: "$1"
+      name: "$2"
+    match_type: regex
+    match_metric_type: gauge
+  - match: tomcatSessionsActiveCurrent.application.([^.]+).statistic.value
+    name: tomcatSessionsActiveCurrent
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: tomcatSessionsActiveMax.application.([^.]+).statistic.value
+    name: tomcatSessionsActiveMax
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: tomcatSessionsAliveMax.application.([^.]+).statistic.value
+    name: tomcatSessionsAliveMax
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: gauge
+  - match: tomcatSessionsCreated.application.([^.]+).statistic.count
+    name: tomcatSessionsCreated
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: tomcatSessionsExpired.application.([^.]+).statistic.count
+    name: tomcatSessionsExpired
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: tomcatSessionsRejected.application.([^.]+).statistic.count
+    name: tomcatSessionsRejected
+    labels:
+      application: "$1"
+    match_type: regex
+    match_metric_type: counter
+  - match: tomcatThreadsBusy.application.([^.]+).name.([^.]+).statistic.value
+    name: tomcatThreadsBusy
+    labels:
+      application: "$1"
+      name: "$2"
+    match_type: regex
+    match_metric_type: gauge
+  - match: tomcatThreadsConfigMax.application.([^.]+).name.([^.]+).statistic.value
+    name: tomcatThreadsConfigMax
+    labels:
+      application: "$1"
+      name: "$2"
+    match_type: regex
+    match_metric_type: gauge
+  - match: tomcatThreadsCurrent.application.([^.]+).name.([^.]+).statistic.value
+    name: tomcatThreadsCurrent
+    labels:
+      application: "$1"
+      name: "$2"
+    match_type: regex
+    match_metric_type: gauge
+# Verifone statistics
+  - match: verifoneResponseCounter.application.([^.]+).errorCode.([^.]+).msgType.([^.]+).statistic.count
+    name: verifoneResponseCounter
+    labels:
+      application: "$1"
+      errorCode: "$2"
+      mgsType: "$3"
+    match_type: regex
+    match_metric_type: counter
+  - match: verifoneResponseCounter.application.([^.]+).msgType.([^.]+).statistic.count
+    name: verifoneResponseCounter
+    labels:
+      application: "$1"
+      errorCode: "undefined"
+      mgsType: "$2"
+    match_type: regex
+    match_metric_type: counter
+  - match: verifoneResponseTimer.application.([^.]+).errorCode.([^.]+).msgType.([^.]+)
+    name: verifoneResponseTimer
+    labels:
+      application: "$1"
+      errorCode: "$2"
+      mgsType: "$3"
+    match_type: regex
+    match_metric_type: timer
+  - match: verifoneResponseTimer.application.([^.]+).msgType.([^.]+)
+    name: verifoneResponseTimer
+    labels:
+      application: "$1"
+      errorCode: "undefined"
+      mgsType: "$2"
+    match_type: regex
+    match_metric_type: timer
+# ssr metrics
+  - match: ssr.event_loop.blocked
+    name: eventLoopBlocked
+    labels:
+      application: "ssr"
+    match_type: regex
+    match_metric_type: timer

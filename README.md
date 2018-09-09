@@ -1,10 +1,4 @@
-# statsd exporter [![Build Status](https://travis-ci.org/prometheus/statsd_exporter.svg)][travis]
-
-[![CircleCI](https://circleci.com/gh/prometheus/statsd_exporter/tree/master.svg?style=shield)][circleci]
-[![Docker Repository on Quay](https://quay.io/repository/prometheus/statsd-exporter/status)][quay]
-[![Docker Pulls](https://img.shields.io/docker/pulls/prom/statsd-exporter.svg)][hub]
-
-`statsd_exporter` receives StatsD-style metrics and exports them as Prometheus metrics.
+`statsd_exporter` receives StatsD-style metrics and exports them to an elasticsearch index.
 
 ## Overview
 
@@ -15,19 +9,15 @@ StatsD's repeater backend to repeat all received metrics to a `statsd_exporter`
 process. This exporter translates StatsD metrics to Prometheus metrics via
 configured mapping rules.
 
-    +----------+                         +-------------------+                        +--------------+
-    |  StatsD  |---(UDP/TCP repeater)--->|  statsd_exporter  |<---(scrape /metrics)---|  Prometheus  |
-    +----------+                         +-------------------+                        +--------------+
+    +----------+                         +-------------------+                            +----------------+
+    |  StatsD  |---(UDP/TCP repeater)--->|  statsd_exporter  |---(dimensional metrics)--->|  ElasticSearch |
+    +----------+                         +-------------------+                            +----------------+
 
 ### Without StatsD
 
 Since the StatsD exporter uses the same line protocol as StatsD itself, you can
 also configure your applications to send StatsD metrics directly to the exporter.
 In that case, you don't need to run a StatsD server anymore.
-
-We recommend this only as an intermediate solution and recommend switching to
-[native Prometheus instrumentation](http://prometheus.io/docs/instrumenting/clientlibs/)
-in the long term.
 
 ### DogStatsD extensions
 
@@ -43,23 +33,6 @@ without values (`#some_tag`) are not supported.
 
     $ go build
     $ ./statsd_exporter --help
-    Usage of ./statsd_exporter:
-      -statsd.listen-address string
-          The UDP address on which to receive statsd metric lines. DEPRECATED, use statsd.listen-udp instead.
-      -statsd.listen-tcp string
-          The TCP address on which to receive statsd metric lines. "" disables it. (default ":9125")
-      -statsd.listen-udp string
-          The UDP address on which to receive statsd metric lines. "" disables it. (default ":9125")
-      -statsd.mapping-config string
-          Metric mapping configuration file name.
-      -statsd.read-buffer int
-          Size (in bytes) of the operating system's transmit read buffer associated with the UDP connection. Please make sure the kernel parameters net.core.rmem_max is set to a value greater than the value specified.
-      -version
-          Print version information.
-      -web.listen-address string
-          The address on which to expose the web interface and generated Prometheus metrics. (default ":9102")
-      -web.telemetry-path string
-          Path under which to expose metrics. (default "/metrics")
 
 ## Tests
 
@@ -81,18 +54,6 @@ lines. The first mapping rule that matches a StatsD metric wins.
 Metrics that don't match any mapping in the configuration file are translated
 into Prometheus metrics without any labels and with any non-alphanumeric
 characters, including periods, translated into underscores.
-
-In general, the different metric types are translated as follows:
-
-    StatsD gauge   -> Prometheus gauge
-
-    StatsD counter -> Prometheus counter
-
-    StatsD timer   -> Prometheus summary                    <-- indicates timer quantiles
-                   -> Prometheus counter (suffix `_total`)  <-- indicates total time spent
-                   -> Prometheus counter (suffix `_count`)  <-- indicates total number of timer events
-
-An example mapping configuration:
 
 ```yaml
 mappings:
@@ -169,7 +130,7 @@ to set the timer type for a single metric:
 ```yaml
 mappings:
 - match: test.timing.*.*.*
-  timer_type: histogram
+  timer_type: raw_timer
   buckets: [ 0.01, 0.025, 0.05, 0.1 ]
   name: "my_timer"
   labels:
@@ -195,10 +156,6 @@ mappings:
     protocol: "$3"
     code: "$4"
 ```
-
-Note, that one may also set the histogram buckets.  If not set, then the default
-[Prometheus client values](https://godoc.org/github.com/prometheus/client_golang/prometheus#pkg-variables) are used: `[.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10]`. `+Inf` is added
-automatically.
 
 `timer_type` is only used when the statsd metric type is a timer. `buckets` is
 only used when the statsd metric type is a timerand the `timer_type` is set to
@@ -266,22 +223,3 @@ mappings:
 
 Possible values for `match_metric_type` are `gauge`, `counter` and `timer`.
 
-## Using Docker
-
-You can deploy this exporter using the [prom/statsd-exporter](https://registry.hub.docker.com/u/prom/statsd-exporter/) Docker image.
-
-For example:
-
-```bash
-docker pull prom/statsd-exporter
-
-docker run -d -p 9102:9102 -p 9125:9125 -p 9125:9125/udp \
-        -v $PWD/statsd_mapping.conf:/tmp/statsd_mapping.conf \
-        prom/statsd-exporter -statsd.mapping-config=/tmp/statsd_mapping.conf
-```
-
-
-[travis]: https://travis-ci.org/prometheus/statsd_exporter
-[circleci]: https://circleci.com/gh/prometheus/statsd_exporter
-[quay]: https://quay.io/repository/prometheus/statsd-exporter
-[hub]: https://hub.docker.com/r/prom/statsd-exporter/

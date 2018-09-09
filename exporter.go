@@ -1,34 +1,16 @@
-// Copyright 2013 The Prometheus Authors
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"hash/fnv"
-	"io"
-	"net"
-	"regexp"
-	"strconv"
-	"strings"
-	"unicode/utf8"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/model"
 	"github.com/golang/glog"
+	"github.com/jvosantos/statsd_exporter/metrics"
+	"hash/fnv"
+	"sort"
+	"github.com/olivere/elastic"
+	"github.com/jvosantos/statsd_exporter/mappings"
+	"time"
 )
 
 const (
@@ -39,556 +21,325 @@ const (
 )
 
 var (
-	illegalCharsRE = regexp.MustCompile(`[^a-zA-Z0-9_]`)
-
 	hash   = fnv.New64a()
 	strBuf bytes.Buffer // Used for hashing.
 	intBuf = make([]byte, 8)
 )
 
-// hashNameAndLabels returns a hash value of the provided name string and all
-// the label names and values in the provided labels map.
-//
-// Not safe for concurrent use! (Uses a shared buffer and hasher to save on
-// allocations.)
-func hashNameAndLabels(name string, labels prometheus.Labels) uint64 {
+func labelsToSignature(labels map[string]string) uint64 {
+	if len(labels) == 0 {
+		return emptyLabelSignature
+	}
+
+	labelNames := make([]string, 0, len(labels))
+	for labelName := range labels {
+		labelNames = append(labelNames, labelName)
+	}
+	sort.Strings(labelNames)
+
+	sum := hashNew()
+	for _, labelName := range labelNames {
+		sum = hashAdd(sum, labelName)
+		sum = hashAddByte(sum, separatorByte)
+		sum = hashAdd(sum, labels[labelName])
+		sum = hashAddByte(sum, separatorByte)
+	}
+	return sum
+}
+
+func hashNameAndLabels(name string, labels metrics.Labels) uint64 {
 	hash.Reset()
 	strBuf.Reset()
 	strBuf.WriteString(name)
 	hash.Write(strBuf.Bytes())
-	binary.BigEndian.PutUint64(intBuf, model.LabelsToSignature(labels))
+	binary.BigEndian.PutUint64(intBuf, labelsToSignature(labels))
 	hash.Write(intBuf)
 	return hash.Sum64()
 }
 
+type MetricDocument struct {
+	Timestamp	time.Time		`json:"@timestamp"`
+	Name        string			`json:"name"`
+	Description string			`json:"description"`
+	Value       float64			`json:"value"`
+	Labels      metrics.Labels	`json:"labels"`
+	MetricType  string			`json:"metricType"`
+}
+
 type CounterContainer struct {
-	Elements map[uint64]prometheus.Counter
+	Elements map[uint64]metrics.Counter
 }
 
 func NewCounterContainer() *CounterContainer {
 	return &CounterContainer{
-		Elements: make(map[uint64]prometheus.Counter),
+		Elements: make(map[uint64]metrics.Counter),
 	}
 }
 
-func (c *CounterContainer) Get(metricName string, labels prometheus.Labels, help string) (prometheus.Counter, error) {
+func (c *CounterContainer) Get(metricName string, labels metrics.Labels, help string) (metrics.Counter, error) {
 	hash := hashNameAndLabels(metricName, labels)
 	counter, ok := c.Elements[hash]
 	if !ok {
-		counter = prometheus.NewCounter(prometheus.CounterOpts{
-			Name:        metricName,
-			Help:        help,
-			ConstLabels: labels,
-		})
-		if err := prometheus.Register(counter); err != nil {
-			return nil, err
-		}
+		counter = metrics.NewCounter(metricName, help, labels)
+
 		c.Elements[hash] = counter
 	}
 	return counter, nil
 }
 
 type GaugeContainer struct {
-	Elements map[uint64]prometheus.Gauge
+	Elements map[uint64]metrics.Gauge
 }
 
 func NewGaugeContainer() *GaugeContainer {
 	return &GaugeContainer{
-		Elements: make(map[uint64]prometheus.Gauge),
+		Elements: make(map[uint64]metrics.Gauge),
 	}
 }
 
-func (c *GaugeContainer) Get(metricName string, labels prometheus.Labels, help string) (prometheus.Gauge, error) {
+func (c *GaugeContainer) Get(metricName string, labels metrics.Labels, help string) (metrics.Gauge, error) {
 	hash := hashNameAndLabels(metricName, labels)
 	gauge, ok := c.Elements[hash]
 	if !ok {
-		gauge = prometheus.NewGauge(prometheus.GaugeOpts{
-			Name:        metricName,
-			Help:        help,
-			ConstLabels: labels,
-		})
-		if err := prometheus.Register(gauge); err != nil {
-			return nil, err
-		}
+		gauge = metrics.NewGauge(metricName, help, labels)
+
 		c.Elements[hash] = gauge
 	}
 	return gauge, nil
 }
 
-type SummaryContainer struct {
-	Elements map[uint64]prometheus.Summary
-}
-
-func NewSummaryContainer() *SummaryContainer {
-	return &SummaryContainer{
-		Elements: make(map[uint64]prometheus.Summary),
-	}
-}
-
-func (c *SummaryContainer) Get(metricName string, labels prometheus.Labels, help string) (prometheus.Summary, error) {
-	hash := hashNameAndLabels(metricName, labels)
-	summary, ok := c.Elements[hash]
-	if !ok {
-		summary = prometheus.NewSummary(
-			prometheus.SummaryOpts{
-				Name:        metricName,
-				Help:        help,
-				ConstLabels: labels,
-			})
-		if err := prometheus.Register(summary); err != nil {
-			return nil, err
-		}
-		c.Elements[hash] = summary
-	}
-	return summary, nil
-}
-
 type HistogramContainer struct {
-	Elements map[uint64]prometheus.Histogram
-	mapper   *metricMapper
+	Elements map[uint64]metrics.Histogram
 }
 
-func NewHistogramContainer(mapper *metricMapper) *HistogramContainer {
+func NewHistogramContainer() *HistogramContainer {
 	return &HistogramContainer{
-		Elements: make(map[uint64]prometheus.Histogram),
-		mapper:   mapper,
+		Elements: make(map[uint64]metrics.Histogram),
 	}
 }
 
-func (c *HistogramContainer) Get(metricName string, labels prometheus.Labels, help string, mapping *metricMapping) (prometheus.Histogram, error) {
+func (c *HistogramContainer) Get(metricName string, labels metrics.Labels, help string) (metrics.Histogram, error) {
 	hash := hashNameAndLabels(metricName, labels)
 	histogram, ok := c.Elements[hash]
 	if !ok {
-		buckets := c.mapper.Defaults.Buckets
-		if mapping != nil && mapping.Buckets != nil && len(mapping.Buckets) > 0 {
-			buckets = mapping.Buckets
-		}
-		histogram = prometheus.NewHistogram(
-			prometheus.HistogramOpts{
-				Name:        metricName,
-				Help:        help,
-				ConstLabels: labels,
-				Buckets:     buckets,
-			})
+		histogram = metrics.NewHistogram(metricName, help, labels)
+
 		c.Elements[hash] = histogram
-		if err := prometheus.Register(histogram); err != nil {
-			return nil, err
-		}
 	}
 	return histogram, nil
 }
 
-type Event interface {
-	MetricName() string
-	Value() float64
-	Labels() map[string]string
-	MetricType() metricType
-}
-
-type CounterEvent struct {
-	metricName string
-	value      float64
-	labels     map[string]string
-}
-
-func (c *CounterEvent) MetricName() string        { return c.metricName }
-func (c *CounterEvent) Value() float64            { return c.value }
-func (c *CounterEvent) Labels() map[string]string { return c.labels }
-func (c *CounterEvent) MetricType() metricType    { return metricTypeCounter }
-
-type GaugeEvent struct {
-	metricName string
-	value      float64
-	relative   bool
-	labels     map[string]string
-}
-
-func (g *GaugeEvent) MetricName() string        { return g.metricName }
-func (g *GaugeEvent) Value() float64            { return g.value }
-func (c *GaugeEvent) Labels() map[string]string { return c.labels }
-func (c *GaugeEvent) MetricType() metricType    { return metricTypeGauge }
-
-type TimerEvent struct {
-	metricName string
-	value      float64
-	labels     map[string]string
-}
-
-func (t *TimerEvent) MetricName() string        { return t.metricName }
-func (t *TimerEvent) Value() float64            { return t.value }
-func (c *TimerEvent) Labels() map[string]string { return c.labels }
-func (c *TimerEvent) MetricType() metricType    { return metricTypeTimer }
-
-type Events []Event
-
 type Exporter struct {
-	Counters   *CounterContainer
-	Gauges     *GaugeContainer
-	Summaries  *SummaryContainer
-	Histograms *HistogramContainer
-	mapper     *metricMapper
+	Counters      *CounterContainer
+	Gauges        *GaugeContainer
+	Histograms    *HistogramContainer
+	mapper        *mappings.MetricMapper
+	elasticBulkProcessor *elastic.BulkProcessor
+	elasticIndex  string
 }
 
-func escapeMetricName(metricName string) string {
-	// If a metric starts with a digit, prepend an underscore.
-	if metricName[0] >= '0' && metricName[0] <= '9' {
-		metricName = "_" + metricName
-	}
-
-	// Replace all illegal metric chars with underscores.
-	metricName = illegalCharsRE.ReplaceAllString(metricName, "_")
-	return metricName
-}
-
-func (b *Exporter) Listen(e <-chan Events) {
-	for {
-		events, ok := <-e
-		if !ok {
-			glog.V(10).Info("Channel is closed. Break out of Exporter.Listener.")
-			return
-		}
-		for _, event := range events {
-			var help string
-			metricName := ""
-			prometheusLabels := event.Labels()
-
-			mapping, labels, present := b.mapper.getMapping(event.MetricName(), event.MetricType())
-			if mapping == nil {
-				mapping = &metricMapping{}
-			}
-
-			if mapping.Action == actionTypeDrop {
-				continue
-			}
-
-			if mapping.HelpText == "" {
-				help = defaultHelp
-			} else {
-				help = mapping.HelpText
-			}
-			if present {
-				metricName = escapeMetricName(mapping.Name)
-				for label, value := range labels {
-					prometheusLabels[label] = value
-				}
-			} else {
-				eventsUnmapped.Inc()
-				metricName = escapeMetricName(event.MetricName())
-			}
-
-			switch ev := event.(type) {
-			case *CounterEvent:
-				// We don't accept negative values for counters. Incrementing the counter with a negative number
-				// will cause the exporter to panic. Instead we will warn and continue to the next event.
-				if event.Value() < 0.0 {
-					glog.V(10).Infof("Counter %q is: '%f' (counter must be non-negative value)", metricName, event.Value())
-					eventStats.WithLabelValues("illegal_negative_counter").Inc()
-					continue
-				}
-
-				counter, err := b.Counters.Get(
-					metricName,
-					prometheusLabels,
-					help,
-				)
-				if err == nil {
-					counter.Add(event.Value())
-
-					eventStats.WithLabelValues("counter").Inc()
-				} else {
-					glog.V(10).Infof(regErrF, metricName, err)
-					conflictingEventStats.WithLabelValues("counter").Inc()
-				}
-
-			case *GaugeEvent:
-				gauge, err := b.Gauges.Get(
-					metricName,
-					prometheusLabels,
-					help,
-				)
-
-				if err == nil {
-					if ev.relative {
-						gauge.Add(event.Value())
-					} else {
-						gauge.Set(event.Value())
-					}
-
-					eventStats.WithLabelValues("gauge").Inc()
-				} else {
-					glog.V(10).Infof(regErrF, metricName, err)
-					conflictingEventStats.WithLabelValues("gauge").Inc()
-				}
-
-			case *TimerEvent:
-				t := timerTypeDefault
-				if mapping != nil {
-					t = mapping.TimerType
-				}
-				if t == timerTypeDefault {
-					t = b.mapper.Defaults.TimerType
-				}
-
-				switch t {
-				case timerTypeHistogram:
-					histogram, err := b.Histograms.Get(
-						metricName,
-						prometheusLabels,
-						help,
-						mapping,
-					)
-					if err == nil {
-						histogram.Observe(event.Value() / 1000) // prometheus presumes seconds, statsd millisecond
-						eventStats.WithLabelValues("timer").Inc()
-					} else {
-						glog.V(10).Infof(regErrF, metricName, err)
-						conflictingEventStats.WithLabelValues("timer").Inc()
-					}
-
-				case timerTypeDefault, timerTypeSummary:
-					summary, err := b.Summaries.Get(
-						metricName,
-						prometheusLabels,
-						help,
-					)
-					if err == nil {
-						summary.Observe(event.Value())
-						eventStats.WithLabelValues("timer").Inc()
-					} else {
-						glog.V(10).Infof(regErrF, metricName, err)
-						conflictingEventStats.WithLabelValues("timer").Inc()
-					}
-
-				default:
-					panic(fmt.Sprintf("unknown timer type '%s'", t))
-				}
-
-			default:
-				glog.V(10).Infoln("Unsupported event type")
-				eventStats.WithLabelValues("illegal").Inc()
-			}
-		}
-	}
-}
-
-func NewExporter(mapper *metricMapper) *Exporter {
+func NewExporter(mapper *mappings.MetricMapper, processor *elastic.BulkProcessor, index string) *Exporter {
 	return &Exporter{
-		Counters:   NewCounterContainer(),
-		Gauges:     NewGaugeContainer(),
-		Summaries:  NewSummaryContainer(),
-		Histograms: NewHistogramContainer(mapper),
-		mapper:     mapper,
+		Counters:      NewCounterContainer(),
+		Gauges:        NewGaugeContainer(),
+		Histograms:    NewHistogramContainer(),
+		mapper:        mapper,
+		elasticBulkProcessor: processor,
+		elasticIndex:  index,
 	}
 }
 
-func buildEvent(statType, metric string, value float64, relative bool, labels map[string]string) (Event, error) {
-	switch statType {
-	case "c":
-		return &CounterEvent{
-			metricName: metric,
-			value:      float64(value),
-			labels:     labels,
-		}, nil
-	case "g":
-		return &GaugeEvent{
-			metricName: metric,
-			value:      float64(value),
-			relative:   relative,
-			labels:     labels,
-		}, nil
-	case "ms", "h":
-		return &TimerEvent{
-			metricName: metric,
-			value:      float64(value),
-			labels:     labels,
-		}, nil
-	case "s":
-		return nil, fmt.Errorf("No support for StatsD sets")
-	default:
-		return nil, fmt.Errorf("Bad stat type %s", statType)
-	}
-}
-
-func parseDogStatsDTagsToLabels(component string) map[string]string {
-	labels := map[string]string{}
-	tagsReceived.Inc()
-	tags := strings.Split(component, ",")
-	for _, t := range tags {
-		t = strings.TrimPrefix(t, "#")
-		kv := strings.SplitN(t, ":", 2)
-
-		if len(kv) < 2 || len(kv[1]) == 0 {
-			tagErrors.Inc()
-			glog.V(10).Infof("Malformed or empty DogStatsD tag %s in component %s", t, component)
-			continue
-		}
-
-		labels[escapeMetricName(kv[0])] = kv[1]
-	}
-	return labels
-}
-
-func lineToEvents(line string) Events {
-	events := Events{}
-	if line == "" {
-		return events
-	}
-
-	elements := strings.SplitN(line, ":", 2)
-	if len(elements) < 2 || len(elements[0]) == 0 || !utf8.ValidString(line) {
-		sampleErrors.WithLabelValues("malformed_line").Inc()
-		glog.V(10).Infoln("Bad line from StatsD:", line)
-		return events
-	}
-	metric := elements[0]
-	var samples []string
-	if strings.Contains(elements[1], "|#") {
-		// using datadog extensions, disable multi-metrics
-		samples = elements[1:]
-	} else {
-		samples = strings.Split(elements[1], ":")
-	}
-samples:
-	for _, sample := range samples {
-		samplesReceived.Inc()
-		components := strings.Split(sample, "|")
-		samplingFactor := 1.0
-		if len(components) < 2 || len(components) > 4 {
-			sampleErrors.WithLabelValues("malformed_component").Inc()
-			glog.V(10).Infoln("Bad component on line:", line)
-			continue
-		}
-		valueStr, statType := components[0], components[1]
-
-		var relative = false
-		if strings.Index(valueStr, "+") == 0 || strings.Index(valueStr, "-") == 0 {
-			relative = true
-		}
-
-		value, err := strconv.ParseFloat(valueStr, 64)
-		if err != nil {
-			glog.V(10).Infof("Bad value %s on line: %s", valueStr, line)
-			sampleErrors.WithLabelValues("malformed_value").Inc()
-			continue
-		}
-
-		multiplyEvents := 1
-		labels := map[string]string{}
-		if len(components) >= 3 {
-			for _, component := range components[2:] {
-				if len(component) == 0 {
-					glog.V(10).Infoln("Empty component on line: ", line)
-					sampleErrors.WithLabelValues("malformed_component").Inc()
-					continue samples
-				}
+func (b *Exporter) Listen(hierarchicalEventsChannel <-chan metrics.Events) {
+	for {
+		select {
+		case hierarchicalEvents, ok := <-hierarchicalEventsChannel:
+			if !ok {
+				glog.V(10).Info("Channel is closed. Break out of Exporter.Listener.")
+				return
 			}
+			b.processHierarchicalEvents(hierarchicalEvents)
+		}
+	}
+}
 
-			for _, component := range components[2:] {
-				switch component[0] {
-				case '@':
-					if statType != "c" && statType != "ms" {
-						glog.V(10).Infoln("Illegal sampling factor for non-counter metric on line", line)
-						sampleErrors.WithLabelValues("illegal_sample_factor").Inc()
-						continue
-					}
-					samplingFactor, err = strconv.ParseFloat(component[1:], 64)
-					if err != nil {
-						glog.V(10).Infof("Invalid sampling factor %s on line %s", component[1:], line)
-						sampleErrors.WithLabelValues("invalid_sample_factor").Inc()
-					}
-					if samplingFactor == 0 {
-						samplingFactor = 1
-					}
+func (b *Exporter) flush() {
+	glog.V(10).Info("Flushing metrics")
 
-					if statType == "c" {
-						value /= samplingFactor
-					} else if statType == "ms" {
-						multiplyEvents = int(1 / samplingFactor)
-					}
-				case '#':
-					labels = parseDogStatsDTagsToLabels(component)
-				default:
-					glog.V(10).Infof("Invalid sampling factor or tag section %s on line %s", components[2], line)
-					sampleErrors.WithLabelValues("invalid_sample_factor").Inc()
-					continue
-				}
-			}
+	time.Now()
+	time.Now().Format("2006.01.02")
+
+	for hash, counter := range b.Counters.Elements {
+		glog.V(100).Info(counter.Name(), counter.Value(), counter.Labels())
+		b.elasticBulkProcessor.Add(elastic.NewBulkIndexRequest().Index(b.elasticIndex).Type("metric").Doc(MetricDocument{
+			Timestamp:	 time.Now(),
+			Name:        counter.Name(),
+			Description: counter.Description(),
+			MetricType:  "counter",
+			Value:       counter.Value(),
+			Labels:      counter.Labels(),
+		}))
+		delete(b.Counters.Elements, hash)
+	}
+
+	for hash, gauge := range b.Gauges.Elements {
+		glog.V(100).Info(gauge.Name(), gauge.Value(), gauge.Labels())
+		delete(b.Gauges.Elements, hash)
+	}
+
+	for hash, timer := range b.Histograms.Elements {
+		glog.V(100).Info(timer.Name(), timer.Value(), timer.Labels())
+		delete(b.Histograms.Elements, hash)
+	}
+}
+
+func (b *Exporter) processHierarchicalEvents(hierarchicalEvents metrics.Events) {
+	for _, hierarchicalEvent := range hierarchicalEvents {
+		var help string
+		metricName := ""
+		eventLabels := hierarchicalEvent.Labels()
+
+		// Retrieve mapping of current hierarchical event being processed and extract Labels
+		mapping, labels, present := b.mapper.GetMapping(hierarchicalEvent.MetricName(), hierarchicalEvent.MetricType())
+		if mapping == nil {
+			mapping = &mappings.MetricMapping{}
 		}
 
-		for i := 0; i < multiplyEvents; i++ {
-			event, err := buildEvent(statType, metric, value, relative, labels)
-			if err != nil {
-				glog.V(10).Infof("Error building event on line %s: %s", line, err)
-				sampleErrors.WithLabelValues("illegal_event").Inc()
+		if mapping.Action == mappings.ActionTypeDrop {
+			continue
+		}
+
+		if mapping.HelpText == "" {
+			help = defaultHelp
+		} else {
+			help = mapping.HelpText
+		}
+		if present {
+			metricName = metrics.EscapeMetricName(mapping.Name)
+			for label, value := range labels {
+				eventLabels[label] = value
+			}
+		} else {
+			//eventsUnmapped.Inc() // self metric
+			metricName = metrics.EscapeMetricName(hierarchicalEvent.MetricName())
+		}
+
+		index := b.elasticIndex + time.Now().Format("-2006.01.02")
+		glog.Infoln("index:", index)
+
+		switch ev := hierarchicalEvent.(type) {
+		case *metrics.CounterEvent:
+			// We don't accept negative values for counters. Incrementing the counter with a negative number
+			// will cause the exporter to panic. Instead we will warn and continue to the next hierarchicalEvent.
+			if hierarchicalEvent.Value() < 0.0 {
+				glog.V(10).Infof("Counter %q is: '%f' (counter must be non-negative Value)", metricName, hierarchicalEvent.Value())
+				//eventStats.WithLabelValues("illegal_negative_counter").Inc() // self metric
 				continue
 			}
-			events = append(events, event)
-		}
-	}
-	return events
-}
 
-type StatsDUDPListener struct {
-	conn *net.UDPConn
-}
+			b.elasticBulkProcessor.Add(
+				elastic.NewBulkIndexRequest().
+					Index(index).
+					Type("doc").
+					Doc(MetricDocument{
+						Timestamp:	 time.Now(),
+						Name:        metricName,
+						Description: help,
+						MetricType:  "counter",
+						Value:       hierarchicalEvent.Value(),
+						Labels:      eventLabels,
+				}))
 
-func (l *StatsDUDPListener) Listen(e chan<- Events) {
-	buf := make([]byte, 65535)
-	for {
-		n, _, err := l.conn.ReadFromUDP(buf)
-		if err != nil {
-			glog.Fatal(err)
-		}
-		l.handlePacket(buf[0:n], e)
-	}
-}
+			//counter, err := b.Counters.Get(
+			//	metricName,
+			//	eventLabels,
+			//	help,
+			//)
+			//if err == nil {
+			//	counter.Add(hierarchicalEvent.Value())
+			//
+			//	//eventStats.WithLabelValues("counter").Inc() // self metric
+			//} else {
+			//	glog.V(10).Infof(regErrF, metricName, err)
+			//	//conflictingEventStats.WithLabelValues("counter").Inc() // self metric
+			//}
 
-func (l *StatsDUDPListener) handlePacket(packet []byte, e chan<- Events) {
-	udpPackets.Inc()
-	lines := strings.Split(string(packet), "\n")
-	events := Events{}
-	for _, line := range lines {
-		linesReceived.Inc()
-		events = append(events, lineToEvents(line)...)
-	}
-	e <- events
-}
+		case *metrics.GaugeEvent:
+			gauge, err := b.Gauges.Get(
+				metricName,
+				labels,
+				help,
+			)
 
-type StatsDTCPListener struct {
-	conn *net.TCPListener
-}
+			if err == nil {
+				if ev.Relative() {
+					gauge.Add(hierarchicalEvent.Value())
+				} else {
+					gauge.Set(hierarchicalEvent.Value())
+				}
 
-func (l *StatsDTCPListener) Listen(e chan<- Events) {
-	for {
-		c, err := l.conn.AcceptTCP()
-		if err != nil {
-			glog.Fatalf("AcceptTCP failed: %v", err)
-		}
-		go l.handleConn(c, e)
-	}
-}
+				b.elasticBulkProcessor.Add(
+					elastic.NewBulkIndexRequest().
+						Index(index).
+						Type("doc").
+						Doc(MetricDocument{
+							Timestamp:	 time.Now(),
+							Name:        metricName,
+							Description: help,
+							MetricType:  "gauge",
+							Value:       gauge.Value(),
+							Labels:      eventLabels,
+					}))
 
-func (l *StatsDTCPListener) handleConn(c *net.TCPConn, e chan<- Events) {
-	defer c.Close()
-
-	tcpConnections.Inc()
-
-	r := bufio.NewReader(c)
-	for {
-		line, isPrefix, err := r.ReadLine()
-		if err != nil {
-			if err != io.EOF {
-				tcpErrors.Inc()
-				glog.V(10).Infof("Read %s failed: %v", c.RemoteAddr(), err)
+				//eventStats.WithLabelValues("gauge").Inc()  // self metric
+			} else {
+				glog.V(10).Infof(regErrF, metricName, err)
+				//conflictingEventStats.WithLabelValues("gauge").Inc() // self metric
 			}
-			break
+
+		case *metrics.TimerEvent:
+			t := mappings.TimerTypeDefault
+			if mapping != nil {
+				t = mapping.TimerType
+			}
+			if t == mappings.TimerTypeDefault {
+				t = b.mapper.Defaults.TimerType
+			}
+
+			switch t {
+			case mappings.TimerTypeDefault, mappings.TimerTypeRaw:
+				b.elasticBulkProcessor.Add(
+					elastic.NewBulkIndexRequest().
+						Index(index).
+						Type("doc").
+						Doc(MetricDocument{
+							Timestamp:	 time.Now(),
+							Name:        metricName,
+							Description: help,
+							MetricType:  "raw_timer",
+							Value:       hierarchicalEvent.Value(),
+							Labels:      eventLabels,
+					}))
+
+				//histogram, err := b.Histograms.Get(
+				//	metricName,
+				//	labels,
+				//	help,
+				//)
+
+				//if err == nil {
+				//	histogram.Observe(hierarchicalEvent.Value())
+					//eventStats.WithLabelValues("timer").Inc() // self metric
+				//} else {
+				//	glog.V(10).Infof(regErrF, metricName, err)
+					//conflictingEventStats.WithLabelValues("timer").Inc() // self metric
+				//}
+			default:
+				panic(fmt.Sprintf("unknown timer type '%s'", t))
+			}
+
+		default:
+			glog.V(10).Infoln("Unsupported hierarchicalEvent type")
+			//eventStats.WithLabelValues("illegal").Inc() // self metric
 		}
-		if isPrefix {
-			tcpLineTooLong.Inc()
-			glog.V(10).Infof("Read %s failed: line too long", c.RemoteAddr())
-			break
-		}
-		linesReceived.Inc()
-		e <- lineToEvents(string(line))
 	}
 }
